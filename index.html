@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>スリトリーファイター</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <h1>スリトリーファイター</h1>
+          <p class="hero-text">
+            4キャラの選択画面とスプライトシートで構成した、90年代アーケード風の対戦プロトタイプです。
+            地上のパンチ・キック、ジャンプ攻撃に加えて、波動拳コマンドも試せます。
+          </p>
+        </div>
+        <div class="hero-actions">
+          <button id="start-btn" class="primary-btn" type="button">スタート / 決定</button>
+          <button id="reset-btn" class="ghost-btn" type="button">タイトルへ戻る</button>
+          <div id="status-pill" class="status-pill">メニュー</div>
+        </div>
+      </header>
+
+      <main class="main-layout">
+        <section class="stage-card">
+          <canvas
+            id="game-canvas"
+            width="1280"
+            height="720"
+            aria-label="2D格闘ゲームのステージ"
+          ></canvas>
+        </section>
+
+        <section class="info-grid">
+          <article class="info-card">
+            <h2>操作方法</h2>
+            <p>タイトル開始: Enter または Z</p>
+            <p>選択画面: ↑ ↓ ← → で移動</p>
+            <p>決定 / 試合開始: Enter または Z</p>
+            <p>戻る / タイトルへ戻る: X</p>
+            <p>相手決定後: CPU強さを選択</p>
+            <p>移動: ← →</p>
+            <p>しゃがみ: ↓</p>
+            <p>ジャンプ: ↑</p>
+            <p>パンチ: Z / しゃがみパンチ: ↓ + Z</p>
+            <p>キック: X / しゃがみキック: ↓ + X</p>
+            <p>波動拳: ↓ ↘ → + Z</p>
+            <p>ガード: 相手と反対方向を入力</p>
+            <p>全画面: F</p>
+          </article>
+          <article class="info-card">
+            <h2>戦闘システム</h2>
+            <p>今回は4キャラ選択とスプライト表示を優先した簡略版です。</p>
+            <p>使用アクションは立ち、歩き、しゃがみ、ジャンプ、パンチ、キック、波動拳、ガードです。</p>
+            <p>ジャンプ中に Z / X を押すとジャンプ攻撃、しゃがみ中に Z / X を押すとしゃがみ攻撃が出せます。</p>
+            <p>↓ ↘ → + Z で波動拳が出せます。CPU も距離を取りながら波動拳と近接を使い分けます。</p>
+            <p>地上で後ろ入力をしている間に攻撃を受けると、立ちガードまたはしゃがみガードが発動します。</p>
+            <p>相手決定後は CPU の強さを「やさしい / ふつう / 最強」から選べます。</p>
+            <p>効果音は最初のキー入力またはボタン操作後に有効化され、メニュー、攻撃、ガード、被弾、波動拳、ラウンド演出が鳴ります。</p>
+            <p>先に2ラウンド取った側が勝利です。</p>
+          </article>
+          <article class="info-card">
+            <h2>現在の段階</h2>
+            <p>タイトル画面から始まり、キャラ選択画面と対戦画面へ繋がる流れになりました。</p>
+            <p>メニュー操作音、攻撃音、ガード音、被弾音、波動拳音、ラウンド開始と決着演出の効果音まで入っています。</p>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

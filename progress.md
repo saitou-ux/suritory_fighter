@@ -1,0 +1,317 @@
+Original prompt: ストリートファイター2のような２D格闘ゲームを作りたいです。まずはゲーム画面の構成と、ゲームシステムの構築をお願いします。戦闘システムはストリートファイターを忠実に再現しなさい。例えば、ガードのシステム、上中下段攻撃、ジャンプ攻撃などです
+
+2026-03-14
+- プロジェクトを新規作成し、`vite` と `playwright` を導入。
+- `index.html`, `src/style.css`, `src/main.js`, `src/game.js` を追加し、対戦画面・HUD・開始画面・ラウンド進行を実装。
+- 実装済みシステム:
+  - 立ちガード / しゃがみガード
+  - 上段: ジャンプ攻撃
+  - 中段扱い: 立ちパンチ、立ちキック、しゃがみパンチ、飛び道具
+  - 下段: しゃがみキック
+  - ジャンプ、被弾硬直、ガード硬直、ダウン、飛び道具、CPU の簡易行動
+  - `window.render_game_to_text`, `window.advanceTime`
+- 検証:
+  - `npm run build` 成功
+  - Playwright クライアントで `output/web-game/smoke-1`, `output/web-game/fireball-early`, `output/web-game/stand-guard`, `output/web-game/crouch-guard` を生成してスクリーンショット確認
+  - 飛び道具の発生と状態出力、ガード姿勢の切り替えを確認
+- 追加対応:
+  - 画面内の表示文言を日本語へ統一
+  - 攻撃時の腕脚描画を技ごとのポーズ補間方式に差し替え、脚が増えて見える崩れを修正
+  - `output/web-game/menu-ja`, `output/web-game/attack-pose-ja`, `output/web-game/fireball-ja` を生成して日本語UIと攻撃ポーズを再確認
+- スプライト差し替え対応:
+  - `キャラクター/` 配下の4キャラの立ち絵とスプライトシートを読み込むよう `src/game.js` を再構成
+  - 白背景をフレームごとに透過処理して、選択画面と戦闘画面に自然に合成
+  - キャラ選択画面を追加し、プレイヤー選択 → 対戦相手選択 → ラウンド開始の流れを実装
+  - 戦闘システムを簡略化し、立ち / 歩き / ジャンプ / パンチ / キックの5行スプライトに合わせて、しゃがみ・上中下段・ガード・飛び道具を一旦除外
+  - `output/web-game/select-screen`, `output/web-game/battle-sprites`, `output/web-game/punch-sprite` で選択画面、通常戦闘、パンチ命中を確認
+- 選択画面レイアウト更新:
+  - 中央にサムネイル盤面、左に1P大型立ち絵、右にCPU大型立ち絵の構成へ変更
+  - 1P決定後は左に確定キャラ、右にCPU候補が出る構図へ変更
+  - `src/main.js` の Enter 二重処理を削除して、選択画面を飛ばしてしまう不具合を修正
+  - `output/web-game/select-layout-initial-2`, `output/web-game/select-layout-enemy-2` で初期状態とCPU選択状態を確認
+- 顔アイコン風への調整:
+  - 中央サムネイルを顔アップの丸型アイコン + 名前プレートに変更
+  - `output/web-game/select-face-icons/shot-0.png` で顔アイコン風の見た目を確認
+- 入力と空中攻撃の調整:
+  - 攻撃入力を `A / B` から `Z / X` へ変更
+  - ジャンプ中に `Z / X` で空中パンチ / 空中キックを出せるよう更新
+  - UI の操作説明と選択画面フッターも `Z / X` 表記へ同期
+  - 被弾時に相手の攻撃を中断し、即座にヒット状態へ切り替わるよう修正
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/check-zx-baseline-2` を生成し、選択画面から試合開始までの導線を再確認
+  - 生の Playwright 入力で `output/web-game/check-z-punch-final-2` と `output/web-game/check-air-x-kick-final-2` を生成し、`Z` パンチ命中と空中 `X` キック命中を確認
+- タイトル画面追加:
+  - 起動直後をタイトル画面に変更し、`Enter / Z` でキャラクター選択へ進む流れを追加
+  - タイトル画面にロゴ、キャラクター立ち絵、顔アイコン一覧、スタート案内を実装
+  - キャラクター選択のプレイヤー選択段階では `X` でタイトルへ戻れるよう更新
+  - `render_game_to_text` に `title` モードを追加
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/title-screen-ja` を生成し、タイトル画面の見た目と状態出力を確認
+  - 公式 Playwright クライアントで `output/web-game/title-to-select` を生成し、タイトルから選択画面への遷移を確認
+  - 生の Playwright 入力で `output/web-game/select-back-to-title-2` を生成し、`X` でタイトルへ戻る挙動を確認
+- しゃがみ / ガード追加:
+  - 各キャラの `[各キャラ名]_しゃがみ_ガード.png` を読み込み、しゃがみ・しゃがみパンチ・しゃがみキック・立ちガード・しゃがみガードの5行を追加
+  - 地上で `↓` を押すとしゃがみ、`↓ + Z` でしゃがみパンチ、`↓ + X` でしゃがみキックが出るよう更新
+  - 地上で相手と反対方向を入力中に攻撃を受けるとガードが成立し、`↓` も同時入力ならしゃがみガードへ分岐
+  - しゃがみ時の hurtbox / pushbox を低くして、見た目と判定を合わせた
+  - `render_game_to_text` に `crouching`, `guardFrames`, `guardType` を追加
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/crouch-guard-baseline-2` を生成し、タイトルから対戦までの導線を再確認
+  - 生の Playwright 入力で `output/web-game/crouch-state`, `output/web-game/crouch-punch-damage`, `output/web-game/crouch-kick-damage`, `output/web-game/stand-guard-hit`, `output/web-game/crouch-guard-hit` を生成し、各状態と被ガード挙動を確認
+- タイトル画面の機能修正:
+  - タイトル画面で `Z` を押したとき、同じフレームの入力がキャラ選択にも流れて 1P が即確定してしまう不具合を修正
+  - タイトル / 試合終了からの画面遷移直後は、そのフレームの入力を消費して次画面へ持ち越さないよう調整
+  - `npm run build` 成功
+  - 生の Playwright 入力で `output/web-game/title-z-bug-before` を生成し、修正前は `Z` 1回で `phase: enemy` へ飛ぶことを再現
+  - 生の Playwright 入力で `output/web-game/title-z-after-fix`, `output/web-game/title-z-twice-after-fix` を生成し、修正後は `Z` 1回でプレイヤー選択、2回目で対戦相手選択へ進むことを確認
+  - 公式 Playwright クライアントで `output/web-game/title-enter-after-fix-2` を生成し、通常のタイトル → キャラ選択導線も再確認
+- 透過処理の改善:
+  - スプライトシートの白背景だけでなく、フレーム境界のグレー罫線も背景扱いにするよう edge flood fill を調整
+  - 低彩度で明るいピクセルを背景候補に含めることで、シート由来の細い線が残る不具合を修正
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/transparency-title-fix` を生成し、タイトル画面でのスプライト合成を確認
+  - 生の Playwright 入力で `output/web-game/transparency-crouch-punch-fix` を生成し、戦闘中のしゃがみ攻撃スプライトでも罫線が残らないことを確認
+- タイトル画面の簡素化:
+  - タイトル画面からキャラクターの顔アイコン、立ち絵、待機スプライトを除去し、中央のタイトルロゴと開始案内だけを残すレイアウトへ変更
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/title-simple-logo` を生成し、タイトル画面にキャラ絵が表示されないことを確認
+  - 公式 Playwright クライアントで `output/web-game/title-simple-to-select` を生成し、シンプル化後もタイトルからキャラ選択へ遷移できることを確認
+- キャラ選択のCPU枠表示調整:
+  - 1Pキャラ選択中は右側のCPUパネルにキャラ画像と名前を出さず、空の待機枠として表示するよう変更
+  - 1P確定後に対戦相手選択へ入ると、右側のCPU候補表示が従来どおり復帰するよう調整
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/select-player-cpu-blank-2` を生成し、プレイヤー選択段階では CPU 枠が空であることを確認
+  - 公式 Playwright クライアントで `output/web-game/select-enemy-preview-restored-2` を生成し、プレイヤー確定後は CPU 候補が表示されることを確認
+- ガード相性の切り分け:
+  - 空中攻撃に `high`、しゃがみ攻撃に `low` のガード属性を持たせ、立ち技は `mid` として処理するよう変更
+  - 空中攻撃は立ちガードでのみ防げるようにし、しゃがみガードでは被弾するよう調整
+  - しゃがみ攻撃はしゃがみガードでのみ防げるようにし、立ちガードでは被弾するよう調整
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/guard-rules-baseline` を生成し、変更後もタイトルから対戦開始までの導線が崩れていないことを確認
+  - Playwright で `window.__suritreeGame` の戦闘状態を固定し、`output/web-game/guard-air-vs-crouch-hit`, `output/web-game/guard-air-vs-stand-block`, `output/web-game/guard-crouch-vs-stand-hit`, `output/web-game/guard-crouch-vs-crouch-block` を生成して4パターンのガード結果を確認
+- やゆうた特殊スプライトの縮小:
+  - 更新された `やゆうた_しゃがみ_ガード.png` をそのまま読み込みつつ、やゆうたの特殊シート由来フレームだけ描画倍率を `0.8` に調整
+  - 立ち / 歩き / ジャンプなど通常スプライトの倍率は維持し、しゃがみ・しゃがみ攻撃・立ちガード・しゃがみガードにのみ縮小を適用
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/yayuta-special-scale-baseline` を生成し、通常の対戦導線に問題がないことを確認
+  - Playwright で `window.__suritreeGame` の状態を固定し、`output/web-game/yayuta-special-crouch-80`, `output/web-game/yayuta-special-stand-guard-80`, `output/web-game/yayuta-special-crouch-guard-80`, `output/web-game/yayuta-special-crouch-kick-80` を生成して縮小後の見た目を確認
+  - 追加の内部確認で `idle=1.0`, `crouch/stand-guard/crouch-kick=0.8` の `scaleMultiplier` になっていることを確認
+- シモモ特殊スプライトの縮小:
+  - シモモの `しゃがみ / しゃがみ攻撃 / 立ちガード / しゃがみガード` も、やゆうたと同じく特殊シート由来フレームだけ描画倍率を `0.8` に調整
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/shimomo-special-scale-baseline` を生成し、通常の対戦導線に問題がないことを確認
+  - Playwright で `window.__suritreeGame` の状態を固定し、`output/web-game/shimomo-special-crouch-80`, `output/web-game/shimomo-special-stand-guard-80`, `output/web-game/shimomo-special-crouch-guard-80`, `output/web-game/shimomo-special-crouch-kick-80` を生成して縮小後の見た目を確認
+  - 追加の内部確認で `idle=1.0`, `crouch/stand-guard/crouch-kick=0.8` の `scaleMultiplier` になっていることを `output/web-game/shimomo-special-scale-check.json` で確認
+- 試合終了後のタイトル入力復旧:
+  - タイトル画面で待機しているフレームに `input.commit()` が走っておらず、`match-over` から戻った直後に `previous` に残った `punch` が消えないため、`Z` が再入力として認識されない不具合を修正
+  - `step()` の末尾で、どの分岐にも入らなかったフレームでも入力状態をコミットするよう更新
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/title-input-recovery-baseline` を生成し、通常のタイトル -> キャラ選択導線を再確認
+  - Playwright で `match-over` 状態を固定し、`output/web-game/match-over-before-return-fix-check`, `output/web-game/match-over-title-return-fixed`, `output/web-game/match-over-title-z-recovered`, `output/web-game/match-over-title-x-recovered` を生成して、試合終了画面からタイトルへ戻った後も `Z` と `X` が機能することを確認
+- CPU難易度選択の追加:
+  - キャラ選択を `プレイヤー -> 対戦相手 -> CPU強さ` の3段階フローへ拡張し、`やさしい / ふつう / 最強` を選べるよう更新
+  - 選択画面の中央パネルに難易度カードを追加し、右側CPUパネルにも現在の強さを表示するよう変更
+  - `render_game_to_text` に選択中の CPU 強さと、対戦中の `cpuLevel` を追加
+  - `index.html` の操作説明と戦闘システム説明に CPU 強さ選択を追記
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/cpu-difficulty-select-screen` を生成し、相手決定後に難易度選択フェーズへ入ることを確認
+  - 公式 Playwright クライアントで `output/web-game/cpu-difficulty-ultimate-battle` を生成し、`最強` 選択後に対戦開始し、戦闘状態へ `cpuLevel: 最強` が出ることを確認
+  - 追加の Playwright 検証で、難易度選択フェーズから `X` を押すと対戦相手選択へ戻ることも確認
+- 最強CPUの無敗化:
+  - `最強` では地上にいる限り攻撃種別に応じた立ちガード / しゃがみガードへ自動で切り替わる perfect guard を追加
+  - `最強` は時間切れで体力が同じなら `時間切れ制圧` 扱いで CPU 勝利になり、試合全体でも負けない設定に変更
+  - Playwright で `window.__suritreeGame` の戦闘状態を固定し、`output/web-game/cpu-ultimate-guard-high`, `output/web-game/cpu-ultimate-guard-mid`, `output/web-game/cpu-ultimate-guard-low` を生成して、上段/中段は立ちガード、下段はしゃがみガードでHPが減らないことを確認
+  - Playwright で `output/web-game/cpu-ultimate-timeout-win` を生成し、同体力時間切れ時に `シモモの勝利 / 時間切れ制圧` になることを確認
+- TODO:
+  - キャラごとの固有技、必殺技、ガードなどを戻す場合はスプライト行の追加が必要
+  - キック命中時やジャンプ頂点時など、行ごとのフレーム割り当てをさらに細かく調整可能
+  - モバイル向けタッチ操作を追加する場合は入力レイヤを分離して拡張
+- キャラ選択の上下左右対応:
+  - 選択グリッドを 2 列固定のまま、`↑ ↓ ← →` でカーソル移動できるよう `updateSelection` を更新
+  - 列数を `SELECTION_GRID_COLUMNS` として定数化し、描画座標とカーソル移動ロジックが同じレイアウト定義を使うよう整理
+  - `index.html` の操作説明と選択画面フッターを `上下左右で移動` に更新
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/select-four-way-navigation` を生成し、タイトル -> 選択画面 -> `↓` -> `→` の導線と、カーソルが `モツマト` に移ることを確認
+  - 追加の Playwright スクリプトで `output/web-game/select-four-way-sequence.json` を生成し、カーソル遷移が `やゆうた -> シーゲイ -> モツマト -> シモモ -> やゆうた` になることを確認
+- やゆうたの選択画面立ち絵サイズ調整:
+  - `CHARACTER_DEFS` に選択画面用の `selectionPortraitScale` を追加し、やゆうたのみ 1.2 倍で描画
+  - `drawSelectionPortraitPanel` の大型立ち絵は倍率指定とクリップ付きの `drawContainedImage` を使うよう変更し、はみ出しなく拡大表示されるよう更新
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/select-yayuta-portrait-scale` と `output/web-game/select-shimomo-portrait-scale` を生成し、やゆうた選択時のみ大型立ち絵が 20% 大きく表示されることを確認
+- やゆうた立ち絵の白服透過修正:
+  - 立ち絵はスプライトと別の透過判定に分離し、edge flood fill の対象を「端から見える背景色に近いピクセル」に限定
+  - `sampleEdgeBackgroundColor` と `createPortraitBackgroundMatcher` を追加し、立ち絵では白い服や肌を背景扱いしないよう更新
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/select-yayuta-portrait-fix` と `output/web-game/select-shimomo-portrait-fix` を生成し、やゆうたの白いタンクトップが残った状態で選択画面に表示されることを確認
+- シモモのしゃがみ攻撃サイズ調整:
+  - `crouchAttackScaleMultiplier` を追加し、シモモだけ `specialFrameScale: 0.8` を維持したまま、しゃがみパンチとしゃがみキックだけ 1.2 倍補正するよう更新
+  - `getCurrentSpriteDrawInfo` で `crouchPunch` / `crouchKick` のみ `specialScale * crouchAttackScaleMultiplier` を使うよう変更
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/shimomo-crouch-punch-scale` と `output/web-game/shimomo-crouch-kick-scale` を生成し、通常の試合導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/shimomo-crouch-punch-scale-fixed` と `output/web-game/shimomo-crouch-kick-scale-fixed` を生成し、両方の `scaleMultiplier` が `0.96` になっていることを確認
+- やゆうたの表示名変更:
+  - `CHARACTER_DEFS` の表示名を `やゆうた` から `うゆうた` に変更
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/rename-uyuta-select` を生成し、選択画面の表示名と `render_game_to_text` の `cursor` が `うゆうた` に変わっていることを確認
+- やゆうた戦闘スプライトの白タンクトップ透過修正:
+  - スプライトは立ち絵と別の透過判定を使い、端の「背景らしい色」だけをサンプリングするよう更新
+  - フレーム読込時に四辺の 1px 罫線を除いてから縮小転写し、白背景だけが edge flood fill の開始点になるよう調整
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/uyuta-battle-tanktop-fix` を生成し、通常の戦闘導線で白背景ボックスが消え、うゆうたの白タンクトップが残ることを確認
+  - 追加の Playwright スクリプトで `output/web-game/uyuta-idle-sprite-tanktop-fix` と `output/web-game/uyuta-punch-sprite-tanktop-fix` を生成し、待機・攻撃フレームでも白タンクトップが透過していないことを確認
+- うゆうた選択立ち絵の構図調整:
+  - 選択画面の大型立ち絵に `selectionPortraitFocusY` を追加し、うゆうたは上寄せ、他キャラは従来どおり下寄せのまま描画できるよう更新
+  - `drawContainedImage` に縦フォーカス値を受け取る処理を追加し、拡大表示時に顔優先で足側を見切る構図へ調整
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/uyuta-portrait-top-focus` と `output/web-game/shimomo-portrait-baseline-focus` を生成し、うゆうただけ顔が見切れず足側が少し切れる構図になっていることを確認
+- CPU行動パターンの調整:
+  - CPU難易度に `airAttackChance` を追加し、通常・最強で跳び込みと空中攻撃を選びやすいよう更新
+  - `buildCpuIntent` を整理し、地上では中距離で跳び込みを選びやすく、空中では距離が合えばすぐジャンプ攻撃を出せるよう変更
+  - 最強CPUの完璧ガードと時間切れ強制勝利を削除し、強いが普通に被弾する設定へ変更
+  - 難易度カードの文言を `反応は最速 / 跳び込み多め` に更新
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/cpu-ai-difficulty-screen` を生成し、最強説明文が新しい内容に切り替わっていることを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-ultimate-jump-attack-check` を生成し、最強CPUが空中 `kick` を出している状態を確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-ultimate-can-be-hit-check` を生成し、最強CPUでも HP が `90` まで減って `hit` 状態になることを確認
+- しゃがみパンチのガード属性変更:
+  - `crouchPunch` の `guardProfile` を `high` に変更し、しゃがみパンチを上段攻撃扱いへ更新
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/crouch-punch-guard-official-battle` を生成し、通常導線で試合開始まで進み、戦闘画面が表示されることを確認
+  - 追加の Playwright スクリプトで `output/web-game/crouch-punch-vs-stand-guard-high-block` を生成し、立ちガード時は HP `100` のまま `guard` / `guardType: stand` になることを確認
+  - 追加の Playwright スクリプトで `output/web-game/crouch-punch-vs-crouch-guard-high-hit` を生成し、しゃがみガード時は HP `92` になって `hit` 状態になることを確認
+- しゃがみガード用スプライトの透過補正:
+  - 戦闘スプライトの背景色サンプリングを「edge の平均」から「edge の中でも最も明るい帯の平均」へ変更し、白背景に少し灰色が混ざるシートでも透過開始点を安定して取れるよう更新
+  - `createSpriteBackgroundMatcher` のしきい値を、背景基準色に対する動的判定へ変更し、白い衣装を残しつつ `しゃがみ_ガード` シート背景を抜けるよう調整
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/special-sheet-transparency-baseline` を生成し、起動導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/yayuta-crouch-guard-checker.png` と `output/web-game/shimomo-crouch-guard-checker.png` を生成し、両キャラの `しゃがみガード` フレーム背景が透過していることを確認
+  - 追加の Playwright スクリプトで `output/web-game/crouch-guard-battle-yayuta-fixed` と `output/web-game/crouch-guard-battle-shimomo-fixed` を生成し、戦闘キャンバス上でも白背景ボックスが出ないことを確認
+- 波動拳コマンドとCPU飛び道具を追加:
+  - `↓ ↘ → + Z` を quarter-circle-forward として検出するコマンドバッファを追加し、成立時は `fireball` 攻撃へ差し替えるよう更新
+  - `projectiles` 配列を追加し、波動拳の発生、移動、ヒット、ガード、ヒットストップ、画面描画、`render_game_to_text` 出力まで実装
+  - CPU 難易度に飛び道具率と理想間合いを追加し、遠距離では波動拳、中距離では間合い調整、近距離では近接攻撃を優先するよう行動を調整
+  - `index.html` の操作説明と戦闘システム説明に `波動拳: ↓ ↘ → + Z` と CPU の飛び道具運用を追記
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/hadouken-official-baseline-3` を生成し、タイトルからキャラ選択導線が正常なことを確認
+  - 追加の Playwright スクリプトで `output/web-game/player-hadouken-command-clean` を生成し、プレイヤーの `attack: fireball` と `projectiles[0].owner: player` を確認
+  - 追加の Playwright スクリプトで `output/web-game/player-hadouken-hit-confirmed` を生成し、波動拳命中で CPU HP が `90`、`state: hit` になることを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-hadouken-zoning-visible` を生成し、最強 CPU が `attack: fireball` かつ `projectiles[0].owner: enemy` になることを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-close-melee-after-hadouken` を生成し、近距離では最強 CPU が `crouchKick` を出すことを確認
+  - 補助確認として `output/web-game/cpu-spacing-trace.json` を生成し、CPU の位置変化と飛び道具/近接の切り替えログを保存
+- 波動拳の硬直・相殺・CPU頻度を調整:
+  - `fireball` の startup / recovery を延長し、さらに `fireballCooldownFrames` を追加して、波動拳後に明確な隙が残るよう更新
+  - `serializeFighter` に `fireballCooldownFrames` を追加し、`render_game_to_text` から硬直状態を確認できるよう更新
+  - CPU の `projectileChance` を難易度ごとに引き下げ、発射後は長めのクールダウン中に間合い調整や近接へ切り替わるよう調整
+  - `resolveProjectileClashes` を追加し、互いの波動拳が接触したら両方消えるよう相殺処理を実装
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/fireball-balance-official-2` を生成し、導線が壊れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/fireball-recovery-window-2` を生成し、プレイヤーが `state: attack / attack: fireball / fireballCooldownFrames: 98` のまま硬直中であることを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-fireball-frequency-check-2` を生成し、最強 CPU の長距離 6 秒テストで `fireballStarts: 1` まで低下したことを確認
+  - 追加の Playwright スクリプトで `output/web-game/fireball-clash-cancel-2` を生成し、波動拳同士の接触後に `projectiles: []`、両者 HP `100` のまま消えることを確認
+- ジャンプの飛距離と飛び込み反撃を調整:
+  - 前ジャンプの初速を `7.1`、空中の前進目標速度を `3.5` へ引き上げ、ジャンプ攻撃中も横慣性が急に死なないよう空中攻撃時の減速処理を専用値へ分離
+  - ジャンプ開始時に記録した `airControl` を着地まで維持し、飛び込み中に攻撃を出しても前進距離が落ちすぎないよう更新
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/jump-range-official` を生成し、タイトルから選択画面への導線に崩れがないことを確認
+  - 公式 Playwright クライアントで `output/web-game/jump-range-official-battle-3` を生成し、対戦開始後の戦闘画面表示を再確認
+  - 追加の Playwright スクリプトで `output/web-game/jump-over-fireball-counter` を生成し、波動拳を飛び越えた直後の空中キックで CPU HP が `85`、プレイヤー HP が `100` のまま反撃成立することを確認
+- 上段 / 中段 / 下段のガード整理を調整:
+  - 立ちパンチ・立ちキック・しゃがみパンチを `high`、しゃがみキックを `low` に統一し、空中攻撃は `airborne` 由来で `mid` 扱いになるよう更新
+  - ガード判定を `high=立ち/しゃがみ両対応`, `mid=立ちのみ`, `low=しゃがみのみ` へ変更
+  - 波動拳は従来どおり立ち / しゃがみ両ガード可能を維持するため `high` 扱いへ変更
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/guard-profiles-official` を生成し、対戦導線と戦闘画面が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/guard-profile-cases/results.json` を生成し、上段は立ち/しゃがみ両ガード可、中段は立ちガードのみ、下段はしゃがみガードのみ、波動拳は立ち/しゃがみ両ガード可を確認
+  - `output/web-game/guard-profile-cases/stand-guard-vs-air-kick.png` と `output/web-game/guard-profile-cases/crouch-guard-vs-air-kick.png` を確認し、空中キックに対して立ちガードは成功・しゃがみガードは失敗している見た目も再確認
+- CPU の間合い調整と波動拳運用を強化:
+  - 難易度ごとに `keepawayChance` と `zoningChance` を追加し、近すぎる時の後退と、中距離での波動拳選択率を強化
+  - CPU の `decisionFrames` 中でも後退しながら波動拳を選べるようにし、近距離では無理に殴り続けず一度距離を取り直す分岐を追加
+  - 波動拳を撃てる間合いでは飛び込みを少し抑え、間を取って弾を撃つ挙動が出やすいよう調整
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/cpu-zoning-official` を生成し、対戦導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-zoning-analysis/summary.json` を生成し、通常 CPU 4 試行の平均で `fireballStarts: 1.75`, `meleeStarts: 3.25`, `spacingFrames: 211.5`, `closeFrames: 174.25` になり、以前より距離維持と波動拳が増えたことを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-zoning-visible` を生成し、CPU が距離 `412.4` を保った状態で `attack: fireball` を出している見た目を確認
+- シーゲイ / モツマトの立ち絵透過を修正:
+  - 立ち絵の背景サンプリングを「外周の平均色」から「外周の中でも明るく低彩度な帯」優先へ変更し、髪や服がフチに触れている立ち絵でも背景色の推定が崩れにくいよう更新
+  - `createPortraitBackgroundMatcher` のしきい値を背景輝度基準の動的判定へ変更し、白背景の flood fill を安定化
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/portrait-transparency-official-2` を生成し、タイトルからキャラ選択導線が正常なことを確認
+  - 公式 Playwright クライアントで `output/web-game/portrait-transparency-shigei-2` と `output/web-game/portrait-transparency-motsumato-2` を生成し、選択画面でシーゲイとモツマトの立ち絵背景が残らないことを確認
+- CPU 強さを理不尽すぎない範囲で強化:
+  - `easy / normal / ultimate` に `punishChance`, `whiffJumpChance`, `confirmPressureChance` を追加し、反応速度・ガード率・攻め継続も少しだけ底上げ
+  - CPU が相手のガード硬直や被弾硬直を見たら近距離で反撃しやすくし、波動拳の出始めには前ジャンプで差し返す分岐を追加
+  - 近距離で毎回下がりすぎないよう `keepaway` の近距離比率を下げ、代わりに `chooseCpuGroundAttack` で小技 / 下段 / 重め技の選択を整理
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/cpu-strength-official` を生成し、対戦導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-strength-analysis/summary.json` を生成し、通常 CPU 4 試行で `spacingFrames` が `211.5 -> 240.25`、`closeFrames` が `174.25 -> 130.75` に改善しつつ、近距離では `meleeStarts: 4.25` まで増えていることを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-strength-cases/cpu-punish-guard.json` を生成し、相手ガード硬直に対して CPU が `attack: kick` で即反撃することを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-strength-cases/cpu-jump-punish-fireball.json` を生成し、相手の波動拳出始めに CPU が `state: jump` で差し返しへ動くことを確認
+- 波動拳の実体も上段扱いへ統一:
+  - `ATTACK_DEFS.fireball.guardProfile` は既に `high` だったが、`spawnProjectile()` で生成する実体の飛び道具だけ `mid` になっていたため、`high` へ修正して定義と挙動を一致させた
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/fireball-high-official` を生成し、タイトルから選択画面への導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/fireball-high-crouch-guard` を生成し、生成直後の `initialProjectile.guardProfile` が `high`、うゆうたが `crouch-guard` で HP `100` のまま波動拳を防ぐことを確認
+  - 追加の Playwright スクリプトで `output/web-game/fireball-high-stand-guard` を生成し、立ちガードでも `guardType: stand`・HP `100` のまま防げることを確認
+- CPU に降り際ジャンプキックを追加:
+  - 難易度ごとに `lateAirKickChance` を追加し、しゃがみ相手には上りで空中攻撃を空振りしにくく、降下に入って位置が合ったタイミングで空中キックを選びやすくした
+  - 空中 AI で `opponent.crouching` かつ `descending` のときはキックを優先し、それ以外のしゃがみ相手には上り中の空中攻撃を一度見送る分岐を追加
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/cpu-late-kick-official` を生成し、タイトルから選択画面への導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/cpu-late-kick-crouch-target` を生成し、下降中 `vy: 5.6` の CPU が 1 フレーム後に `attack: kick` を選び、その 7 フレーム後にしゃがみ中のうゆうたへ命中して HP `85`・`state: hit` になることを確認
+- 最強 CPU の地上ガードを 8 割前後へ調整:
+  - 最強に `groundGuardChance`, `groundGuardRange`, `projectileGuardRange` を追加し、地上の打撃と飛び道具に少し早め・広めに反応するよう整理
+  - 地上ガード判定では通常の `guardChance` ではなく `groundGuardChance` を使うようにして、最強の地上防御を「高いが完璧ではない」8 割前後へ寄せた
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/ultimate-guard-official` を生成し、タイトルから選択画面への導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/ultimate-ground-guard-low-check/state-0.json` を生成し、下段攻撃に対して 240 試行中 202 回ガード、`guardRate: 0.8416` を確認
+  - 追加の Playwright スクリプトで `output/web-game/ultimate-ground-guard-visual` を生成し、最強シモモが `crouch-guard` でしゃがみキックを防ぐ見た目を確認
+- 効果音を一通り追加:
+  - Web Audio ベースの `SoundManager` を追加し、最初のキー入力またはボタン操作で音声を有効化できるようにした
+  - メニュー移動 / 決定 / 戻る、ラウンド開始、ジャンプ、パンチ、キック、ガード、被弾、波動拳、波動拳相殺、KO、優勝に効果音を割り当てた
+  - `render_game_to_text` に `audio.ready` と最近鳴った効果音 `audio.recent` を追加し、効果音の発火確認をしやすくした
+  - `index.html` の説明文と現在の段階を更新し、効果音の有効化タイミングと実装済み音の種類を明記した
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/sfx-official` を生成し、タイトルから選択画面への導線と `audio.ready: true` / `menuConfirm` を確認
+  - 追加の Playwright スクリプトで `output/web-game/sfx-ui-sequence` を生成し、`menuConfirm -> menuMove -> menuConfirm -> menuCancel` の UI 効果音列を確認
+  - 追加の Playwright スクリプトで `output/web-game/sfx-battle-sequence` を生成し、`jump -> punch -> kick -> guard -> fireball -> projectileClash -> ko -> matchWin` の戦闘効果音列を確認
+- 最強 CPU のジャンプ攻撃を控えめに調整:
+  - 難易度定義に `jumpPatience` と `neutralJumpBias` を追加し、最強は地上で相手が待っているニュートラル状況では自分から跳び込みにくくした
+  - 最強の `jumpChance` を `0.44`、`whiffJumpChance` を `0.34`、`airAttackChance` を `0.82` に下げ、波動拳差し返しのジャンプは残しつつ、通常の跳び込みと空中攻撃を減らした
+  - ジャンプ分岐に `groundedJumpPenalty` と `proactiveJumpPenalty` を入れ、相手が地上で回復していない場面では jump-in と遠距離ジャンプの確率が大きく落ちるよう更新
+  - `npm run build` 成功
+  - 追加の Playwright スクリプトで `output/web-game/ultimate-jump-baseline/state-0.json` を生成し、調整前の 30 秒平均が `jumpStarts: 11.25`, `airAttackStarts: 9` だったことを確認
+  - 追加の Playwright スクリプトで `output/web-game/ultimate-jump-after-2/state-0.json` を生成し、調整後の 30 秒平均が `jumpStarts: 8.25`, `airAttackStarts: 6.25` まで下がったことを確認
+  - 追加の Playwright スクリプトで `output/web-game/ultimate-jump-visual-2` を生成し、最強シモモが基本は地上戦をしつつ、ときどきだけジャンプする見た目を再確認
+- シモモのガードスプライトを拡大:
+  - シモモに `guardScaleMultiplier: 1.2` を追加し、特殊シート全体ではなく立ちガード / しゃがみガードだけ 1.2 倍されるよう更新
+  - `getCurrentSpriteDrawInfo()` に guard 専用の倍率 `guardScale` を追加し、シモモのガード時は `specialFrameScale 0.8 x guardScaleMultiplier 1.2 = 0.96` で描画されるようにした
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/shimomo-guard-scale-official` を生成し、タイトルから選択画面への導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/shimomo-stand-guard-scale` と `output/web-game/shimomo-crouch-guard-scale` を生成し、どちらも `drawInfo.scaleMultiplier: 0.96` で表示されることを確認
+- タイトルの試作文言を削除:
+  - `index.html` のヘッダー上部にあった `アーケード試作` を削除
+  - タイトル画面キャンバス内の `アーケード対戦試作` も削除し、ロゴだけのシンプルな表示に統一
+  - `npm run build` 成功
+  - 公式 Playwright クライアントはタイトル取得時に `Execution context was destroyed` で失敗したため、追加の Playwright スクリプトで `output/web-game/title-no-arcade-copy-check` を生成して見た目を確認
+- チャージ攻撃 `イソパクト` を追加:
+  - `A` 入力を追加し、地上限定で出せる新技 `isopact` を実装
+  - `イソパクト` は `startup 32 / active 4 / recovery 26`、ヒット時 `120f` の長い硬直を与える設定にした
+  - 溜め中はスーパーアーマー扱いにして、通常技と波動拳を受けてもダメージだけ受けてノックバックや中断はしないよう更新
+  - `イソパクト` 同士では、相手がまだ溜め中なら先に出た側の攻撃をミス扱いにして、後から溜めた側がそのまま当てられるようにした
+  - 専用の簡易エフェクトと効果音を追加し、説明文にも `A のイソパクト` を追記
+  - `render_game_to_text` に `attackFrame` と `chargeArmored` を追加し、溜め状態を外部から確認しやすくした
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/isopact-official-baseline` を生成し、タイトルから選択画面・CPU強さ選択までの導線が崩れていないことを確認
+  - 追加の Playwright スクリプトで `output/web-game/isopact-mechanics/results.json` を生成し、地上発動 / 空中発動不可 / 溜め中アーマー / 命中後の長時間硬直 / チャージ同士の後出し勝ちを確認
+- `イソパクト` を撤去:
+  - `A` 入力、`isopact` 攻撃定義、専用エフェクト、専用効果音、関連する被弾処理と状態出力を削除して、戦闘システムを通常技 + 波動拳構成へ戻した
+  - `index.html` の操作説明と戦闘システム説明から `イソパクト` の文言を削除
+  - `npm run build` 成功
+  - 公式 Playwright クライアントで `output/web-game/remove-isopact-official` を生成したがタイトル画面のまま停止したため、追加の Playwright スクリプトで `output/web-game/remove-isopact-check/state-0.json` を生成し、`A` 押下後は `playerAttack: null`、その後の `Z` で `playerAttack: punch` になることを確認
+- GitHub Pages 公開設定を追加:
+  - `vite.config.js` を追加し、ビルド時の `base` を `/suritory_fighter/` に設定
+  - `.github/workflows/deploy-pages.yml` を追加し、`main` への push で GitHub Pages へ自動デプロイする workflow を作成
+  - `.gitignore` を追加し、`node_modules`, `dist`, `output`, `.DS_Store` を除外
+  - `npm run build` 成功
+  - `dist/index.html` でアセットパスが `/suritory_fighter/assets/...` になることを確認
+  - ローカルで Git リポジトリを初期化し、公開先として `https://github.com/saitou-ux/suritory_fighter.git` を `origin` に設定

@@ -1,0 +1,14 @@
+{
+  "name": "suritree-fighter-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2",
+    "vite": "^8.0.0"
+  }
+}
