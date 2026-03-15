@@ -209,6 +209,24 @@ const CPU_LEVELS = [
 const DEFAULT_CPU_LEVEL_INDEX = 1;
 const SELECTION_GRID_COLUMNS = 2;
 
+const CHARACTER_ASSET_URLS = import.meta.glob("../キャラクター/*.png", {
+  eager: true,
+  import: "default",
+});
+
+function resolveCharacterAsset(fileName) {
+  const normalizedTarget = fileName.normalize("NFC");
+
+  for (const [assetPath, assetUrl] of Object.entries(CHARACTER_ASSET_URLS)) {
+    const assetName = assetPath.split("/").pop();
+    if (assetName && assetName.normalize("NFC") === normalizedTarget) {
+      return assetUrl;
+    }
+  }
+
+  throw new Error(`キャラクター素材が見つかりません: ${fileName}`);
+}
+
 const CHARACTER_DEFS = [
   {
     id: "yayuta",
@@ -218,9 +236,9 @@ const CHARACTER_DEFS = [
     crouchAttackScaleMultiplier: 1,
     selectionPortraitScale: 1.2,
     selectionPortraitFocusY: 0,
-    portraitSrc: new URL("../キャラクター/やゆうた.png", import.meta.url).href,
-    spriteSrc: new URL("../キャラクター/やゆうた_スプライト.png", import.meta.url).href,
-    specialSpriteSrc: new URL("../キャラクター/やゆうた_しゃがみ_ガード.png", import.meta.url).href,
+    portraitSrc: resolveCharacterAsset("やゆうた.png"),
+    spriteSrc: resolveCharacterAsset("やゆうた_スプライト.png"),
+    specialSpriteSrc: resolveCharacterAsset("やゆうた_しゃがみ_ガード.png"),
   },
   {
     id: "shimomo",
@@ -231,9 +249,9 @@ const CHARACTER_DEFS = [
     guardScaleMultiplier: 1.2,
     selectionPortraitScale: 1,
     selectionPortraitFocusY: 1,
-    portraitSrc: new URL("../キャラクター/シモモ_立ち絵.png", import.meta.url).href,
-    spriteSrc: new URL("../キャラクター/シモモ_スプライト.png", import.meta.url).href,
-    specialSpriteSrc: new URL("../キャラクター/シモモ_しゃがみ_ガード.png", import.meta.url).href,
+    portraitSrc: resolveCharacterAsset("シモモ_立ち絵.png"),
+    spriteSrc: resolveCharacterAsset("シモモ_スプライト.png"),
+    specialSpriteSrc: resolveCharacterAsset("シモモ_しゃがみ_ガード.png"),
   },
   {
     id: "shigei",
@@ -243,9 +261,9 @@ const CHARACTER_DEFS = [
     crouchAttackScaleMultiplier: 1,
     selectionPortraitScale: 1,
     selectionPortraitFocusY: 1,
-    portraitSrc: new URL("../キャラクター/シーゲイ_立ち絵.png", import.meta.url).href,
-    spriteSrc: new URL("../キャラクター/シーゲイ_スプライト.png", import.meta.url).href,
-    specialSpriteSrc: new URL("../キャラクター/シーゲイ_しゃがみ_ガード.png", import.meta.url).href,
+    portraitSrc: resolveCharacterAsset("シーゲイ_立ち絵.png"),
+    spriteSrc: resolveCharacterAsset("シーゲイ_スプライト.png"),
+    specialSpriteSrc: resolveCharacterAsset("シーゲイ_しゃがみ_ガード.png"),
   },
   {
     id: "motsumato",
@@ -255,9 +273,9 @@ const CHARACTER_DEFS = [
     crouchAttackScaleMultiplier: 1,
     selectionPortraitScale: 1,
     selectionPortraitFocusY: 1,
-    portraitSrc: new URL("../キャラクター/モツマト_立ち絵.png", import.meta.url).href,
-    spriteSrc: new URL("../キャラクター/モツマト_スプライト.png", import.meta.url).href,
-    specialSpriteSrc: new URL("../キャラクター/モツマト_しゃがみ_ガード.png", import.meta.url).href,
+    portraitSrc: resolveCharacterAsset("モツマト_立ち絵.png"),
+    spriteSrc: resolveCharacterAsset("モツマト_スプライト.png"),
+    specialSpriteSrc: resolveCharacterAsset("モツマト_しゃがみ_ガード.png"),
   },
 ];
 
