@@ -27,6 +27,35 @@ const FIREBALL_PROJECTILE = {
   cooldown: 112,
 };
 
+const BGM_PATTERNS = {
+  menu: {
+    stepSeconds: 0.26,
+    steps: [
+      { bass: 45, lead: [72, 76] },
+      { bass: 45, lead: [74] },
+      { bass: 48, lead: [76, 79] },
+      { bass: 48, lead: [74] },
+      { bass: 41, lead: [71, 74] },
+      { bass: 41, lead: [69] },
+      { bass: 43, lead: [71, 74] },
+      { bass: 43, lead: [67] },
+    ],
+  },
+  battle: {
+    stepSeconds: 0.22,
+    steps: [
+      { bass: 38, lead: [62, 65], accent: true },
+      { bass: 38, lead: [65] },
+      { bass: 41, lead: [67, 70], accent: true },
+      { bass: 41, lead: [65] },
+      { bass: 43, lead: [69, 72], accent: true },
+      { bass: 43, lead: [67] },
+      { bass: 41, lead: [65, 69], accent: true },
+      { bass: 41, lead: [64] },
+    ],
+  },
+};
+
 const JUMP_TUNING = {
   launchVy: -18.4,
   launchVx: 7.1,
@@ -295,6 +324,10 @@ function rectsIntersect(a, b) {
 
 function roundValue(value) {
   return Math.round(value * 10) / 10;
+}
+
+function midiToFrequency(note) {
+  return 440 * 2 ** ((note - 69) / 12);
 }
 
 function totalAttackFrames(attack) {
@@ -798,12 +831,17 @@ class SoundManager {
   constructor() {
     this.context = null;
     this.masterGain = null;
+    this.bgmGain = null;
     this.noiseBuffer = null;
     this.ready = false;
     this.failed = false;
     this.enabled = true;
     this.recentEvents = [];
     this.maxRecentEvents = 24;
+    this.requestedBgmMode = "silent";
+    this.bgmMode = "silent";
+    this.bgmStepIndex = 0;
+    this.bgmNextNoteTime = 0;
     this.boundUnlock = () => {
       this.ensureContext(true);
     };
@@ -826,9 +864,13 @@ class SoundManager {
     if (!this.context) {
       this.context = new AudioContextCtor();
       this.masterGain = this.context.createGain();
-      this.masterGain.gain.value = 0.18;
+      this.masterGain.gain.value = 0.22;
+      this.bgmGain = this.context.createGain();
+      this.bgmGain.gain.value = 0.92;
+      this.bgmGain.connect(this.masterGain);
       this.masterGain.connect(this.context.destination);
       this.noiseBuffer = this.createNoiseBuffer(this.context);
+      this.bgmNextNoteTime = this.context.currentTime + 0.02;
     }
 
     if (resume && this.context.state !== "running") {
@@ -869,8 +911,9 @@ class SoundManager {
     when = 0,
     attack = 0.003,
     filterFrequency = null,
+    destinationGain = this.masterGain,
   }) {
-    if (!this.context || !this.masterGain) return;
+    if (!this.context || !destinationGain) return;
 
     const startTime = this.context.currentTime + when;
     const stopTime = startTime + duration;
@@ -896,13 +939,19 @@ class SoundManager {
     gainNode.gain.linearRampToValueAtTime(volume, startTime + attack);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, stopTime);
 
-    output.connect(this.masterGain);
+    output.connect(destinationGain);
     oscillator.start(startTime);
     oscillator.stop(stopTime + 0.01);
   }
 
-  playNoise({ duration = 0.08, volume = 0.024, when = 0, frequency = 1200 }) {
-    if (!this.context || !this.masterGain || !this.noiseBuffer) return;
+  playNoise({
+    duration = 0.08,
+    volume = 0.024,
+    when = 0,
+    frequency = 1200,
+    destinationGain = this.masterGain,
+  }) {
+    if (!this.context || !destinationGain || !this.noiseBuffer) return;
 
     const startTime = this.context.currentTime + when;
     const stopTime = startTime + duration;
@@ -921,10 +970,108 @@ class SoundManager {
 
     source.connect(filter);
     filter.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(destinationGain);
 
     source.start(startTime);
     source.stop(stopTime + 0.01);
+  }
+
+  getTargetBgmMode(gameMode) {
+    if (gameMode === "title" || gameMode === "select" || gameMode === "match-over") {
+      return "menu";
+    }
+
+    if (gameMode === "intro" || gameMode === "fighting" || gameMode === "round-over") {
+      return "battle";
+    }
+
+    return "silent";
+  }
+
+  playBgmStep(pattern, startTime) {
+    if (!this.context || !this.bgmGain || !pattern) return;
+
+    const step = pattern.steps[this.bgmStepIndex % pattern.steps.length];
+    const when = Math.max(0, startTime - this.context.currentTime);
+    const leadVolume = step.accent ? 0.084 : 0.072;
+    const bassVolume = step.accent ? 0.066 : 0.056;
+
+    if (step.bass) {
+      const bassFrequency = midiToFrequency(step.bass);
+      this.playTone({
+        frequency: bassFrequency,
+        endFrequency: bassFrequency * 0.995,
+        duration: pattern.stepSeconds * 0.94,
+        volume: bassVolume,
+        type: "triangle",
+        attack: 0.01,
+        when,
+        destinationGain: this.bgmGain,
+      });
+    }
+
+    if (Array.isArray(step.lead)) {
+      step.lead.forEach((note, index) => {
+        const leadFrequency = midiToFrequency(note);
+        this.playTone({
+          frequency: leadFrequency,
+          endFrequency: leadFrequency * 1.004,
+          duration: pattern.stepSeconds * 0.62,
+          volume: Math.max(0.032, leadVolume - index * 0.012),
+          type: "square",
+          attack: 0.008,
+          when: when + index * 0.012,
+          filterFrequency: 2500,
+          destinationGain: this.bgmGain,
+        });
+      });
+    }
+
+    if (step.accent) {
+      this.playNoise({
+        duration: 0.026,
+        volume: 0.008,
+        frequency: 2200,
+        when,
+        destinationGain: this.bgmGain,
+      });
+    }
+
+    this.bgmStepIndex = (this.bgmStepIndex + 1) % pattern.steps.length;
+  }
+
+  syncBgm(gameMode) {
+    const targetMode = this.getTargetBgmMode(gameMode);
+    if (targetMode !== this.requestedBgmMode) {
+      this.requestedBgmMode = targetMode;
+      this.bgmMode = targetMode;
+      this.bgmStepIndex = 0;
+      this.bgmNextNoteTime = this.context ? this.context.currentTime + 0.02 : 0;
+    }
+
+    const context = this.ensureContext();
+    if (!context || !this.masterGain || !this.enabled || context.state !== "running") {
+      this.ready = Boolean(context) && context.state === "running";
+      return;
+    }
+
+    if (targetMode === "silent") {
+      this.bgmMode = "silent";
+      return;
+    }
+
+    const pattern = BGM_PATTERNS[targetMode];
+    if (!pattern) return;
+
+    const lookAhead = 0.16;
+    if (this.bgmNextNoteTime < context.currentTime) {
+      this.bgmNextNoteTime = context.currentTime + 0.02;
+    }
+
+    while (this.bgmNextNoteTime <= context.currentTime + lookAhead) {
+      this.playBgmStep(pattern, this.bgmNextNoteTime);
+      this.bgmNextNoteTime += pattern.stepSeconds;
+    }
   }
 
   play(id) {
@@ -1003,6 +1150,9 @@ class SoundManager {
     this.ready = Boolean(this.context) && this.context.state === "running";
     return {
       ready: this.ready,
+      bgmMode: this.requestedBgmMode,
+      bgmActive: this.ready && this.requestedBgmMode !== "silent",
+      bgmStep: this.bgmStepIndex,
       recent: this.recentEvents.slice(-8),
     };
   }
@@ -1310,6 +1460,7 @@ export class SuritreeFighterGame {
 
   step() {
     this.uiFrame += 1;
+    this.sound.syncBgm(this.mode);
 
     if (this.input.wasPressed("fullscreen")) {
       this.toggleFullscreen();
