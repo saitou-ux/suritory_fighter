@@ -29,29 +29,45 @@ const FIREBALL_PROJECTILE = {
 
 const BGM_PATTERNS = {
   menu: {
-    stepSeconds: 0.26,
+    stepSeconds: 0.24,
     steps: [
-      { bass: 45, lead: [72, 76] },
-      { bass: 45, lead: [74] },
-      { bass: 48, lead: [76, 79] },
-      { bass: 48, lead: [74] },
-      { bass: 41, lead: [71, 74] },
-      { bass: 41, lead: [69] },
-      { bass: 43, lead: [71, 74] },
-      { bass: 43, lead: [67] },
+      { bass: 43, lead: [67], counter: [74] },
+      { bass: 43, pad: [62, 67] },
+      { bass: 46, lead: [69, 72], accent: true },
+      { bass: 46, counter: [76] },
+      { bass: 50, lead: [71], counter: [78] },
+      { bass: 50, pad: [66, 71] },
+      { bass: 48, lead: [74, 76], accent: true },
+      { bass: 48, counter: [79] },
+      { bass: 43, lead: [67], counter: [74] },
+      { bass: 43, pad: [62, 67] },
+      { bass: 46, lead: [69, 72], accent: true },
+      { bass: 46, counter: [74] },
+      { bass: 41, lead: [66], counter: [72] },
+      { bass: 41, pad: [60, 65] },
+      { bass: 43, lead: [67, 71], accent: true },
+      { bass: 43, counter: [74], noiseVolume: 0.005 },
     ],
   },
   battle: {
-    stepSeconds: 0.22,
+    stepSeconds: 0.18,
     steps: [
-      { bass: 38, lead: [62, 65], accent: true },
-      { bass: 38, lead: [65] },
-      { bass: 41, lead: [67, 70], accent: true },
-      { bass: 41, lead: [65] },
-      { bass: 43, lead: [69, 72], accent: true },
-      { bass: 43, lead: [67] },
-      { bass: 41, lead: [65, 69], accent: true },
-      { bass: 41, lead: [64] },
+      { bass: 38, subBass: 50, lead: [69, 74], counter: [81], accent: true, noiseFrequency: 1900 },
+      { bass: 38, pad: [62, 67], counter: [77] },
+      { bass: 45, subBass: 57, lead: [72], counter: [79], accent: true },
+      { bass: 45, lead: [74], noiseVolume: 0.006 },
+      { bass: 41, subBass: 53, lead: [76, 79], counter: [84], accent: true, noiseFrequency: 2100 },
+      { bass: 41, pad: [65, 69], counter: [77] },
+      { bass: 48, subBass: 60, lead: [74], counter: [81], accent: true },
+      { bass: 48, lead: [72], noiseVolume: 0.006 },
+      { bass: 38, subBass: 50, lead: [69, 74], counter: [81], accent: true, noiseFrequency: 1900 },
+      { bass: 38, pad: [62, 67], counter: [77] },
+      { bass: 46, subBass: 58, lead: [71, 76], counter: [83], accent: true },
+      { bass: 46, lead: [74], noiseVolume: 0.006 },
+      { bass: 43, subBass: 55, lead: [72, 78], counter: [84], accent: true, noiseFrequency: 2050 },
+      { bass: 43, pad: [67, 72], counter: [79] },
+      { bass: 45, subBass: 57, lead: [76, 79], counter: [83], accent: true },
+      { bass: 45, lead: [72], noiseVolume: 0.007, noiseFrequency: 2300 },
     ],
   },
 };
@@ -995,6 +1011,7 @@ class SoundManager {
     const when = Math.max(0, startTime - this.context.currentTime);
     const leadVolume = step.accent ? 0.084 : 0.072;
     const bassVolume = step.accent ? 0.066 : 0.056;
+    const counterVolume = step.accent ? 0.045 : 0.036;
 
     if (step.bass) {
       const bassFrequency = midiToFrequency(step.bass);
@@ -1007,6 +1024,37 @@ class SoundManager {
         attack: 0.01,
         when,
         destinationGain: this.bgmGain,
+      });
+    }
+
+    if (step.subBass) {
+      const subBassFrequency = midiToFrequency(step.subBass);
+      this.playTone({
+        frequency: subBassFrequency,
+        endFrequency: subBassFrequency * 0.996,
+        duration: pattern.stepSeconds * 0.86,
+        volume: 0.032,
+        type: "sine",
+        attack: 0.012,
+        when,
+        destinationGain: this.bgmGain,
+      });
+    }
+
+    if (Array.isArray(step.pad)) {
+      step.pad.forEach((note, index) => {
+        const padFrequency = midiToFrequency(note);
+        this.playTone({
+          frequency: padFrequency,
+          endFrequency: padFrequency * 1.002,
+          duration: pattern.stepSeconds * 0.92,
+          volume: Math.max(0.016, 0.026 - index * 0.004),
+          type: "triangle",
+          attack: 0.018,
+          when,
+          filterFrequency: 1800,
+          destinationGain: this.bgmGain,
+        });
       });
     }
 
@@ -1027,11 +1075,28 @@ class SoundManager {
       });
     }
 
-    if (step.accent) {
+    if (Array.isArray(step.counter)) {
+      step.counter.forEach((note, index) => {
+        const counterFrequency = midiToFrequency(note);
+        this.playTone({
+          frequency: counterFrequency,
+          endFrequency: counterFrequency * 0.998,
+          duration: pattern.stepSeconds * 0.42,
+          volume: Math.max(0.02, counterVolume - index * 0.008),
+          type: "sine",
+          attack: 0.006,
+          when: when + pattern.stepSeconds * 0.34 + index * 0.01,
+          filterFrequency: 2600,
+          destinationGain: this.bgmGain,
+        });
+      });
+    }
+
+    if (step.accent || step.noiseVolume) {
       this.playNoise({
         duration: 0.026,
-        volume: 0.008,
-        frequency: 2200,
+        volume: step.noiseVolume ?? 0.008,
+        frequency: step.noiseFrequency ?? 2200,
         when,
         destinationGain: this.bgmGain,
       });
