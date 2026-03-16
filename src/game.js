@@ -29,45 +29,45 @@ const FIREBALL_PROJECTILE = {
 
 const BGM_PATTERNS = {
   menu: {
-    stepSeconds: 0.24,
+    stepSeconds: 0.16,
     steps: [
-      { bass: 43, lead: [67], counter: [74] },
-      { bass: 43, pad: [62, 67] },
-      { bass: 46, lead: [69, 72], accent: true },
-      { bass: 46, counter: [76] },
-      { bass: 50, lead: [71], counter: [78] },
-      { bass: 50, pad: [66, 71] },
-      { bass: 48, lead: [74, 76], accent: true },
-      { bass: 48, counter: [79] },
-      { bass: 43, lead: [67], counter: [74] },
-      { bass: 43, pad: [62, 67] },
-      { bass: 46, lead: [69, 72], accent: true },
-      { bass: 46, counter: [74] },
-      { bass: 41, lead: [66], counter: [72] },
-      { bass: 41, pad: [60, 65] },
-      { bass: 43, lead: [67, 71], accent: true },
-      { bass: 43, counter: [74], noiseVolume: 0.005 },
+      { drums: ["kick", "hat"], bass: 43, chord: [55, 59, 62], lead: [67] },
+      { drums: ["hat"], bass: 43, counter: [74] },
+      { drums: ["hat"], chord: [55, 59, 62], lead: [71] },
+      { drums: ["snare", "hat"], bass: 46, counter: [79], accent: true },
+      { drums: ["kick", "hat"], bass: 50, chord: [57, 60, 64], lead: [72] },
+      { drums: ["hat"], bass: 50, counter: [79] },
+      { drums: ["hat"], chord: [59, 62, 66], lead: [74] },
+      { drums: ["snare", "hat"], bass: 48, counter: [81], accent: true },
+      { drums: ["kick", "hat"], bass: 43, chord: [55, 59, 62], lead: [67] },
+      { drums: ["hat"], bass: 43, counter: [74] },
+      { drums: ["hat"], chord: [57, 60, 64], lead: [71] },
+      { drums: ["snare", "hat"], bass: 46, counter: [79], accent: true },
+      { drums: ["kick", "hat"], bass: 41, chord: [53, 57, 60], lead: [66] },
+      { drums: ["hat"], bass: 41, counter: [72] },
+      { drums: ["openHat"], chord: [55, 59, 62], lead: [67], counter: [74] },
+      { drums: ["snare", "crash"], bass: 43, counter: [79], accent: true },
     ],
   },
   battle: {
-    stepSeconds: 0.18,
+    stepSeconds: 0.125,
     steps: [
-      { bass: 38, subBass: 50, lead: [69, 74], counter: [81], accent: true, noiseFrequency: 1900 },
-      { bass: 38, pad: [62, 67], counter: [77] },
-      { bass: 45, subBass: 57, lead: [72], counter: [79], accent: true },
-      { bass: 45, lead: [74], noiseVolume: 0.006 },
-      { bass: 41, subBass: 53, lead: [76, 79], counter: [84], accent: true, noiseFrequency: 2100 },
-      { bass: 41, pad: [65, 69], counter: [77] },
-      { bass: 48, subBass: 60, lead: [74], counter: [81], accent: true },
-      { bass: 48, lead: [72], noiseVolume: 0.006 },
-      { bass: 38, subBass: 50, lead: [69, 74], counter: [81], accent: true, noiseFrequency: 1900 },
-      { bass: 38, pad: [62, 67], counter: [77] },
-      { bass: 46, subBass: 58, lead: [71, 76], counter: [83], accent: true },
-      { bass: 46, lead: [74], noiseVolume: 0.006 },
-      { bass: 43, subBass: 55, lead: [72, 78], counter: [84], accent: true, noiseFrequency: 2050 },
-      { bass: 43, pad: [67, 72], counter: [79] },
-      { bass: 45, subBass: 57, lead: [76, 79], counter: [83], accent: true },
-      { bass: 45, lead: [72], noiseVolume: 0.007, noiseFrequency: 2300 },
+      { drums: ["kick", "hat", "crash"], bass: 38, subBass: 26, chord: [57, 62, 65], lead: [74], accent: true },
+      { drums: ["hat"], bass: 38, counter: [81] },
+      { drums: ["kick", "hat"], bass: 38, lead: [76] },
+      { drums: ["snare", "hat"], chord: [57, 62, 65], counter: [79] },
+      { drums: ["kick", "hat"], bass: 41, subBass: 29, chord: [60, 65, 69], lead: [77], accent: true },
+      { drums: ["hat"], bass: 41, counter: [84] },
+      { drums: ["kick", "hat"], bass: 41, lead: [79] },
+      { drums: ["snare", "hat"], chord: [60, 65, 69], counter: [81] },
+      { drums: ["kick", "hat"], bass: 43, subBass: 31, chord: [62, 67, 71], lead: [81], accent: true },
+      { drums: ["hat"], bass: 43, counter: [84] },
+      { drums: ["kick", "hat"], bass: 43, lead: [79] },
+      { drums: ["snare", "hat"], chord: [62, 67, 71], counter: [86] },
+      { drums: ["kick", "hat"], bass: 45, subBass: 33, chord: [60, 65, 69], lead: [77], accent: true },
+      { drums: ["hat"], bass: 45, counter: [83] },
+      { drums: ["kick", "openHat"], bass: 45, lead: [76, 79] },
+      { drums: ["snare", "crash"], chord: [60, 65, 69], counter: [84], accent: true },
     ],
   },
 };
@@ -848,6 +848,7 @@ class SoundManager {
     this.context = null;
     this.masterGain = null;
     this.bgmGain = null;
+    this.bgmCompressor = null;
     this.noiseBuffer = null;
     this.ready = false;
     this.failed = false;
@@ -858,6 +859,7 @@ class SoundManager {
     this.bgmMode = "silent";
     this.bgmStepIndex = 0;
     this.bgmNextNoteTime = 0;
+    this.lastBgmLayers = [];
     this.boundUnlock = () => {
       this.ensureContext(true);
     };
@@ -881,9 +883,16 @@ class SoundManager {
       this.context = new AudioContextCtor();
       this.masterGain = this.context.createGain();
       this.masterGain.gain.value = 0.22;
+      this.bgmCompressor = this.context.createDynamicsCompressor();
+      this.bgmCompressor.threshold.value = -18;
+      this.bgmCompressor.knee.value = 18;
+      this.bgmCompressor.ratio.value = 3.4;
+      this.bgmCompressor.attack.value = 0.003;
+      this.bgmCompressor.release.value = 0.18;
       this.bgmGain = this.context.createGain();
-      this.bgmGain.gain.value = 0.92;
-      this.bgmGain.connect(this.masterGain);
+      this.bgmGain.gain.value = 1.08;
+      this.bgmGain.connect(this.bgmCompressor);
+      this.bgmCompressor.connect(this.masterGain);
       this.masterGain.connect(this.context.destination);
       this.noiseBuffer = this.createNoiseBuffer(this.context);
       this.bgmNextNoteTime = this.context.currentTime + 0.02;
@@ -965,6 +974,8 @@ class SoundManager {
     volume = 0.024,
     when = 0,
     frequency = 1200,
+    filterType = "bandpass",
+    q = 0.7,
     destinationGain = this.masterGain,
   }) {
     if (!this.context || !destinationGain || !this.noiseBuffer) return;
@@ -976,9 +987,9 @@ class SoundManager {
     const gainNode = this.context.createGain();
 
     source.buffer = this.noiseBuffer;
-    filter.type = "bandpass";
+    filter.type = filterType;
     filter.frequency.setValueAtTime(frequency, startTime);
-    filter.Q.value = 0.7;
+    filter.Q.value = q;
 
     gainNode.gain.setValueAtTime(0.0001, startTime);
     gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.004);
@@ -990,6 +1001,239 @@ class SoundManager {
 
     source.start(startTime);
     source.stop(stopTime + 0.01);
+  }
+
+  playKick({ when = 0, volume = 0.12, destinationGain = this.bgmGain } = {}) {
+    if (!this.context || !destinationGain) return;
+
+    const startTime = this.context.currentTime + when;
+    const stopTime = startTime + 0.22;
+    const oscillator = this.context.createOscillator();
+    const gainNode = this.context.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(164, startTime);
+    oscillator.frequency.exponentialRampToValueAtTime(44, stopTime);
+
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.004);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, stopTime);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(destinationGain);
+    oscillator.start(startTime);
+    oscillator.stop(stopTime + 0.01);
+
+    this.playNoise({
+      duration: 0.018,
+      volume: 0.012,
+      when,
+      frequency: 1600,
+      filterType: "highpass",
+      q: 0.5,
+      destinationGain,
+    });
+  }
+
+  playSnare({ when = 0, volume = 0.078, destinationGain = this.bgmGain } = {}) {
+    if (!this.context || !destinationGain) return;
+
+    this.playNoise({
+      duration: 0.1,
+      volume,
+      when,
+      frequency: 2300,
+      filterType: "highpass",
+      q: 0.9,
+      destinationGain,
+    });
+
+    this.playTone({
+      frequency: 210,
+      endFrequency: 138,
+      duration: 0.08,
+      volume: 0.032,
+      type: "triangle",
+      attack: 0.002,
+      when,
+      filterFrequency: 1500,
+      destinationGain,
+    });
+  }
+
+  playHiHat({ when = 0, open = false, destinationGain = this.bgmGain } = {}) {
+    if (!this.context || !destinationGain) return;
+
+    this.playNoise({
+      duration: open ? 0.11 : 0.035,
+      volume: open ? 0.028 : 0.02,
+      when,
+      frequency: open ? 7600 : 9000,
+      filterType: "highpass",
+      q: 0.8,
+      destinationGain,
+    });
+  }
+
+  playCrash({ when = 0, destinationGain = this.bgmGain } = {}) {
+    if (!this.context || !destinationGain) return;
+
+    this.playNoise({
+      duration: 0.22,
+      volume: 0.03,
+      when,
+      frequency: 6200,
+      filterType: "highpass",
+      q: 0.55,
+      destinationGain,
+    });
+  }
+
+  playSynthVoice({
+    notes,
+    when = 0,
+    duration = 0.16,
+    volume = 0.04,
+    type = "sawtooth",
+    detunes = [0],
+    attack = 0.008,
+    sustainLevel = 0.58,
+    filterStart = 2600,
+    filterEnd = 1000,
+    q = 0.8,
+    pan = 0,
+    destinationGain = this.bgmGain,
+  }) {
+    if (!this.context || !destinationGain || !Array.isArray(notes) || !notes.length) return;
+
+    const startTime = this.context.currentTime + when;
+    const stopTime = startTime + duration;
+    const voiceGain = this.context.createGain();
+    const filter = this.context.createBiquadFilter();
+    let output = filter;
+
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(filterStart, startTime);
+    filter.frequency.exponentialRampToValueAtTime(Math.max(180, filterEnd), stopTime);
+    filter.Q.value = q;
+
+    if (this.context.createStereoPanner) {
+      const panner = this.context.createStereoPanner();
+      panner.pan.setValueAtTime(pan, startTime);
+      filter.connect(panner);
+      output = panner;
+    }
+
+    voiceGain.gain.setValueAtTime(0.0001, startTime);
+    voiceGain.gain.linearRampToValueAtTime(volume, startTime + attack);
+    voiceGain.gain.linearRampToValueAtTime(volume * sustainLevel, startTime + duration * 0.46);
+    voiceGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
+
+    notes.forEach((note) => {
+      const frequency = midiToFrequency(note);
+      detunes.forEach((detune) => {
+        const oscillator = this.context.createOscillator();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+        oscillator.detune.setValueAtTime(detune, startTime);
+        oscillator.connect(voiceGain);
+        oscillator.start(startTime);
+        oscillator.stop(stopTime + 0.01);
+      });
+    });
+
+    voiceGain.connect(filter);
+    output.connect(destinationGain);
+  }
+
+  playBassSynth(note, when = 0, accent = false) {
+    this.playSynthVoice({
+      notes: [note],
+      when,
+      duration: accent ? 0.18 : 0.14,
+      volume: accent ? 0.07 : 0.058,
+      type: "sawtooth",
+      detunes: [0, 5],
+      attack: 0.004,
+      sustainLevel: 0.48,
+      filterStart: 980,
+      filterEnd: 320,
+      q: 1.1,
+      pan: -0.06,
+      destinationGain: this.bgmGain,
+    });
+  }
+
+  playSubBass(note, when = 0) {
+    this.playSynthVoice({
+      notes: [note],
+      when,
+      duration: 0.18,
+      volume: 0.045,
+      type: "triangle",
+      detunes: [0],
+      attack: 0.01,
+      sustainLevel: 0.72,
+      filterStart: 460,
+      filterEnd: 180,
+      q: 0.7,
+      pan: 0,
+      destinationGain: this.bgmGain,
+    });
+  }
+
+  playChordStab(notes, when = 0, accent = false) {
+    this.playSynthVoice({
+      notes,
+      when,
+      duration: accent ? 0.22 : 0.18,
+      volume: accent ? 0.034 : 0.026,
+      type: "sawtooth",
+      detunes: [-7, 7],
+      attack: 0.01,
+      sustainLevel: 0.42,
+      filterStart: accent ? 3000 : 2200,
+      filterEnd: 900,
+      q: 0.9,
+      pan: 0.04,
+      destinationGain: this.bgmGain,
+    });
+  }
+
+  playLeadSynth(note, when = 0, accent = false) {
+    this.playSynthVoice({
+      notes: [note],
+      when,
+      duration: accent ? 0.2 : 0.14,
+      volume: accent ? 0.068 : 0.056,
+      type: "sawtooth",
+      detunes: [-9, 0, 9],
+      attack: 0.005,
+      sustainLevel: 0.38,
+      filterStart: accent ? 4200 : 3400,
+      filterEnd: 1200,
+      q: 1,
+      pan: 0.08,
+      destinationGain: this.bgmGain,
+    });
+  }
+
+  playCounterSynth(note, when = 0) {
+    this.playSynthVoice({
+      notes: [note],
+      when,
+      duration: 0.1,
+      volume: 0.03,
+      type: "square",
+      detunes: [0],
+      attack: 0.004,
+      sustainLevel: 0.28,
+      filterStart: 3200,
+      filterEnd: 1600,
+      q: 0.8,
+      pan: 0.16,
+      destinationGain: this.bgmGain,
+    });
   }
 
   getTargetBgmMode(gameMode) {
@@ -1009,98 +1253,67 @@ class SoundManager {
 
     const step = pattern.steps[this.bgmStepIndex % pattern.steps.length];
     const when = Math.max(0, startTime - this.context.currentTime);
-    const leadVolume = step.accent ? 0.084 : 0.072;
-    const bassVolume = step.accent ? 0.066 : 0.056;
-    const counterVolume = step.accent ? 0.045 : 0.036;
+    const layers = [];
+
+    if (Array.isArray(step.drums)) {
+      step.drums.forEach((drum) => {
+        switch (drum) {
+          case "kick":
+            this.playKick({ when });
+            layers.push("kick");
+            break;
+          case "snare":
+            this.playSnare({ when });
+            layers.push("snare");
+            break;
+          case "hat":
+            this.playHiHat({ when });
+            layers.push("hat");
+            break;
+          case "openHat":
+            this.playHiHat({ when, open: true });
+            layers.push("openHat");
+            break;
+          case "crash":
+            this.playCrash({ when });
+            layers.push("crash");
+            break;
+          default:
+            break;
+        }
+      });
+    }
 
     if (step.bass) {
-      const bassFrequency = midiToFrequency(step.bass);
-      this.playTone({
-        frequency: bassFrequency,
-        endFrequency: bassFrequency * 0.995,
-        duration: pattern.stepSeconds * 0.94,
-        volume: bassVolume,
-        type: "triangle",
-        attack: 0.01,
-        when,
-        destinationGain: this.bgmGain,
-      });
+      this.playBassSynth(step.bass, when, step.accent);
+      layers.push("bass");
     }
 
     if (step.subBass) {
-      const subBassFrequency = midiToFrequency(step.subBass);
-      this.playTone({
-        frequency: subBassFrequency,
-        endFrequency: subBassFrequency * 0.996,
-        duration: pattern.stepSeconds * 0.86,
-        volume: 0.032,
-        type: "sine",
-        attack: 0.012,
-        when,
-        destinationGain: this.bgmGain,
-      });
+      this.playSubBass(step.subBass, when);
+      layers.push("subBass");
     }
 
-    if (Array.isArray(step.pad)) {
-      step.pad.forEach((note, index) => {
-        const padFrequency = midiToFrequency(note);
-        this.playTone({
-          frequency: padFrequency,
-          endFrequency: padFrequency * 1.002,
-          duration: pattern.stepSeconds * 0.92,
-          volume: Math.max(0.016, 0.026 - index * 0.004),
-          type: "triangle",
-          attack: 0.018,
-          when,
-          filterFrequency: 1800,
-          destinationGain: this.bgmGain,
-        });
-      });
+    if (Array.isArray(step.chord)) {
+      this.playChordStab(step.chord, when, step.accent);
+      layers.push("chord");
     }
 
     if (Array.isArray(step.lead)) {
       step.lead.forEach((note, index) => {
-        const leadFrequency = midiToFrequency(note);
-        this.playTone({
-          frequency: leadFrequency,
-          endFrequency: leadFrequency * 1.004,
-          duration: pattern.stepSeconds * 0.62,
-          volume: Math.max(0.032, leadVolume - index * 0.012),
-          type: "square",
-          attack: 0.008,
-          when: when + index * 0.012,
-          filterFrequency: 2500,
-          destinationGain: this.bgmGain,
-        });
+        this.playLeadSynth(note, when + index * 0.012, step.accent && index === 0);
       });
+      layers.push("lead");
     }
 
     if (Array.isArray(step.counter)) {
       step.counter.forEach((note, index) => {
-        const counterFrequency = midiToFrequency(note);
-        this.playTone({
-          frequency: counterFrequency,
-          endFrequency: counterFrequency * 0.998,
-          duration: pattern.stepSeconds * 0.42,
-          volume: Math.max(0.02, counterVolume - index * 0.008),
-          type: "sine",
-          attack: 0.006,
-          when: when + pattern.stepSeconds * 0.34 + index * 0.01,
-          filterFrequency: 2600,
-          destinationGain: this.bgmGain,
-        });
+        this.playCounterSynth(note, when + pattern.stepSeconds * 0.44 + index * 0.01);
       });
+      layers.push("counter");
     }
 
-    if (step.accent || step.noiseVolume) {
-      this.playNoise({
-        duration: 0.026,
-        volume: step.noiseVolume ?? 0.008,
-        frequency: step.noiseFrequency ?? 2200,
-        when,
-        destinationGain: this.bgmGain,
-      });
-    }
+    this.lastBgmLayers = layers;
 
     this.bgmStepIndex = (this.bgmStepIndex + 1) % pattern.steps.length;
   }
@@ -1218,6 +1431,7 @@ class SoundManager {
       bgmMode: this.requestedBgmMode,
       bgmActive: this.ready && this.requestedBgmMode !== "silent",
       bgmStep: this.bgmStepIndex,
+      bgmLayers: this.lastBgmLayers,
       recent: this.recentEvents.slice(-8),
     };
   }
