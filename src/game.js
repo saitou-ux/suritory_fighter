@@ -29,45 +29,45 @@ const FIREBALL_PROJECTILE = {
 
 const BGM_PATTERNS = {
   menu: {
-    stepSeconds: 0.16,
+    stepSeconds: 0.24,
     steps: [
-      { drums: ["kick", "hat"], bass: 43, chord: [55, 59, 62], lead: [67] },
-      { drums: ["hat"], bass: 43, counter: [74] },
-      { drums: ["hat"], chord: [55, 59, 62], lead: [71] },
-      { drums: ["snare", "hat"], bass: 46, counter: [79], accent: true },
-      { drums: ["kick", "hat"], bass: 50, chord: [57, 60, 64], lead: [72] },
-      { drums: ["hat"], bass: 50, counter: [79] },
-      { drums: ["hat"], chord: [59, 62, 66], lead: [74] },
-      { drums: ["snare", "hat"], bass: 48, counter: [81], accent: true },
-      { drums: ["kick", "hat"], bass: 43, chord: [55, 59, 62], lead: [67] },
-      { drums: ["hat"], bass: 43, counter: [74] },
-      { drums: ["hat"], chord: [57, 60, 64], lead: [71] },
-      { drums: ["snare", "hat"], bass: 46, counter: [79], accent: true },
-      { drums: ["kick", "hat"], bass: 41, chord: [53, 57, 60], lead: [66] },
-      { drums: ["hat"], bass: 41, counter: [72] },
-      { drums: ["openHat"], chord: [55, 59, 62], lead: [67], counter: [74] },
-      { drums: ["snare", "crash"], bass: 43, counter: [79], accent: true },
+      { bass: 43, lead: [67], counter: [74] },
+      { bass: 43, pad: [62, 67] },
+      { bass: 46, lead: [69, 72], accent: true },
+      { bass: 46, counter: [76] },
+      { bass: 50, lead: [71], counter: [78] },
+      { bass: 50, pad: [66, 71] },
+      { bass: 48, lead: [74, 76], accent: true },
+      { bass: 48, counter: [79] },
+      { bass: 43, lead: [67], counter: [74] },
+      { bass: 43, pad: [62, 67] },
+      { bass: 46, lead: [69, 72], accent: true },
+      { bass: 46, counter: [74] },
+      { bass: 41, lead: [66], counter: [72] },
+      { bass: 41, pad: [60, 65] },
+      { bass: 43, lead: [67, 71], accent: true },
+      { bass: 43, counter: [74], noiseVolume: 0.005 },
     ],
   },
   battle: {
-    stepSeconds: 0.125,
+    stepSeconds: 0.18,
     steps: [
-      { drums: ["kick", "hat", "crash"], bass: 38, subBass: 26, chord: [57, 62, 65], lead: [74], accent: true },
-      { drums: ["hat"], bass: 38, counter: [81] },
-      { drums: ["kick", "hat"], bass: 38, lead: [76] },
-      { drums: ["snare", "hat"], chord: [57, 62, 65], counter: [79] },
-      { drums: ["kick", "hat"], bass: 41, subBass: 29, chord: [60, 65, 69], lead: [77], accent: true },
-      { drums: ["hat"], bass: 41, counter: [84] },
-      { drums: ["kick", "hat"], bass: 41, lead: [79] },
-      { drums: ["snare", "hat"], chord: [60, 65, 69], counter: [81] },
-      { drums: ["kick", "hat"], bass: 43, subBass: 31, chord: [62, 67, 71], lead: [81], accent: true },
-      { drums: ["hat"], bass: 43, counter: [84] },
-      { drums: ["kick", "hat"], bass: 43, lead: [79] },
-      { drums: ["snare", "hat"], chord: [62, 67, 71], counter: [86] },
-      { drums: ["kick", "hat"], bass: 45, subBass: 33, chord: [60, 65, 69], lead: [77], accent: true },
-      { drums: ["hat"], bass: 45, counter: [83] },
-      { drums: ["kick", "openHat"], bass: 45, lead: [76, 79] },
-      { drums: ["snare", "crash"], chord: [60, 65, 69], counter: [84], accent: true },
+      { bass: 38, subBass: 50, lead: [69, 74], counter: [81], accent: true, noiseFrequency: 1900 },
+      { bass: 38, pad: [62, 67], counter: [77] },
+      { bass: 45, subBass: 57, lead: [72], counter: [79], accent: true },
+      { bass: 45, lead: [74], noiseVolume: 0.006 },
+      { bass: 41, subBass: 53, lead: [76, 79], counter: [84], accent: true, noiseFrequency: 2100 },
+      { bass: 41, pad: [65, 69], counter: [77] },
+      { bass: 48, subBass: 60, lead: [74], counter: [81], accent: true },
+      { bass: 48, lead: [72], noiseVolume: 0.006 },
+      { bass: 38, subBass: 50, lead: [69, 74], counter: [81], accent: true, noiseFrequency: 1900 },
+      { bass: 38, pad: [62, 67], counter: [77] },
+      { bass: 46, subBass: 58, lead: [71, 76], counter: [83], accent: true },
+      { bass: 46, lead: [74], noiseVolume: 0.006 },
+      { bass: 43, subBass: 55, lead: [72, 78], counter: [84], accent: true, noiseFrequency: 2050 },
+      { bass: 43, pad: [67, 72], counter: [79] },
+      { bass: 45, subBass: 57, lead: [76, 79], counter: [83], accent: true },
+      { bass: 45, lead: [72], noiseVolume: 0.007, noiseFrequency: 2300 },
     ],
   },
 };
@@ -848,7 +848,6 @@ class SoundManager {
     this.context = null;
     this.masterGain = null;
     this.bgmGain = null;
-    this.bgmCompressor = null;
     this.noiseBuffer = null;
     this.ready = false;
     this.failed = false;
@@ -883,16 +882,9 @@ class SoundManager {
       this.context = new AudioContextCtor();
       this.masterGain = this.context.createGain();
       this.masterGain.gain.value = 0.22;
-      this.bgmCompressor = this.context.createDynamicsCompressor();
-      this.bgmCompressor.threshold.value = -18;
-      this.bgmCompressor.knee.value = 18;
-      this.bgmCompressor.ratio.value = 3.4;
-      this.bgmCompressor.attack.value = 0.003;
-      this.bgmCompressor.release.value = 0.18;
       this.bgmGain = this.context.createGain();
-      this.bgmGain.gain.value = 0.7;
-      this.bgmGain.connect(this.bgmCompressor);
-      this.bgmCompressor.connect(this.masterGain);
+      this.bgmGain.gain.value = 0.82;
+      this.bgmGain.connect(this.masterGain);
       this.masterGain.connect(this.context.destination);
       this.noiseBuffer = this.createNoiseBuffer(this.context);
       this.bgmNextNoteTime = this.context.currentTime + 0.02;
@@ -1001,6 +993,115 @@ class SoundManager {
 
     source.start(startTime);
     source.stop(stopTime + 0.01);
+  }
+
+  playJumpSe() {
+    this.playTone({
+      frequency: 210,
+      endFrequency: 460,
+      duration: 0.11,
+      volume: 0.055,
+      type: "triangle",
+      attack: 0.004,
+      filterFrequency: 2600,
+    });
+    this.playTone({
+      frequency: 420,
+      endFrequency: 690,
+      duration: 0.07,
+      volume: 0.022,
+      type: "sine",
+      when: 0.018,
+      attack: 0.003,
+    });
+    this.playNoise({
+      duration: 0.032,
+      volume: 0.012,
+      frequency: 1800,
+      filterType: "highpass",
+      q: 0.65,
+      when: 0.008,
+    });
+  }
+
+  playPunchSe() {
+    this.playTone({
+      frequency: 210,
+      endFrequency: 108,
+      duration: 0.055,
+      volume: 0.062,
+      type: "square",
+      attack: 0.002,
+      filterFrequency: 1400,
+    });
+    this.playNoise({
+      duration: 0.04,
+      volume: 0.016,
+      frequency: 980,
+      filterType: "bandpass",
+      q: 0.9,
+      when: 0.004,
+    });
+  }
+
+  playKickSe() {
+    this.playTone({
+      frequency: 168,
+      endFrequency: 82,
+      duration: 0.095,
+      volume: 0.072,
+      type: "sawtooth",
+      attack: 0.002,
+      filterFrequency: 1250,
+    });
+    this.playTone({
+      frequency: 112,
+      endFrequency: 70,
+      duration: 0.08,
+      volume: 0.026,
+      type: "triangle",
+      when: 0.012,
+      attack: 0.002,
+      filterFrequency: 900,
+    });
+    this.playNoise({
+      duration: 0.055,
+      volume: 0.018,
+      frequency: 860,
+      filterType: "bandpass",
+      q: 0.78,
+      when: 0.01,
+    });
+  }
+
+  playFireballSe() {
+    this.playTone({
+      frequency: 132,
+      endFrequency: 610,
+      duration: 0.2,
+      volume: 0.06,
+      type: "sawtooth",
+      attack: 0.005,
+      filterFrequency: 2000,
+    });
+    this.playTone({
+      frequency: 372,
+      endFrequency: 256,
+      duration: 0.14,
+      volume: 0.026,
+      type: "triangle",
+      when: 0.03,
+      attack: 0.004,
+      filterFrequency: 1500,
+    });
+    this.playNoise({
+      duration: 0.1,
+      volume: 0.018,
+      frequency: 1400,
+      filterType: "bandpass",
+      q: 0.7,
+      when: 0.018,
+    });
   }
 
   playKick({ when = 0, volume = 0.085, destinationGain = this.bgmGain } = {}) {
@@ -1254,63 +1355,103 @@ class SoundManager {
     const step = pattern.steps[this.bgmStepIndex % pattern.steps.length];
     const when = Math.max(0, startTime - this.context.currentTime);
     const layers = [];
-
-    if (Array.isArray(step.drums)) {
-      step.drums.forEach((drum) => {
-        switch (drum) {
-          case "kick":
-            this.playKick({ when });
-            layers.push("kick");
-            break;
-          case "snare":
-            this.playSnare({ when });
-            layers.push("snare");
-            break;
-          case "hat":
-            this.playHiHat({ when });
-            layers.push("hat");
-            break;
-          case "openHat":
-            this.playHiHat({ when, open: true });
-            layers.push("openHat");
-            break;
-          case "crash":
-            this.playCrash({ when });
-            layers.push("crash");
-            break;
-          default:
-            break;
-        }
-      });
-    }
+    const leadVolume = step.accent ? 0.084 : 0.072;
+    const bassVolume = step.accent ? 0.066 : 0.056;
+    const counterVolume = step.accent ? 0.045 : 0.036;
 
     if (step.bass) {
-      this.playBassSynth(step.bass, when, step.accent);
+      const bassFrequency = midiToFrequency(step.bass);
+      this.playTone({
+        frequency: bassFrequency,
+        endFrequency: bassFrequency * 0.995,
+        duration: pattern.stepSeconds * 0.94,
+        volume: bassVolume,
+        type: "triangle",
+        attack: 0.01,
+        when,
+        destinationGain: this.bgmGain,
+      });
       layers.push("bass");
     }
 
     if (step.subBass) {
-      this.playSubBass(step.subBass, when);
+      const subBassFrequency = midiToFrequency(step.subBass);
+      this.playTone({
+        frequency: subBassFrequency,
+        endFrequency: subBassFrequency * 0.996,
+        duration: pattern.stepSeconds * 0.86,
+        volume: 0.032,
+        type: "sine",
+        attack: 0.012,
+        when,
+        destinationGain: this.bgmGain,
+      });
       layers.push("subBass");
     }
 
-    if (Array.isArray(step.chord)) {
-      this.playChordStab(step.chord, when, step.accent);
-      layers.push("chord");
+    if (Array.isArray(step.pad)) {
+      step.pad.forEach((note, index) => {
+        const padFrequency = midiToFrequency(note);
+        this.playTone({
+          frequency: padFrequency,
+          endFrequency: padFrequency * 1.002,
+          duration: pattern.stepSeconds * 0.92,
+          volume: Math.max(0.016, 0.026 - index * 0.004),
+          type: "triangle",
+          attack: 0.018,
+          when,
+          filterFrequency: 1800,
+          destinationGain: this.bgmGain,
+        });
+      });
+      layers.push("pad");
     }
 
     if (Array.isArray(step.lead)) {
       step.lead.forEach((note, index) => {
-        this.playLeadSynth(note, when + index * 0.012, step.accent && index === 0);
+        const leadFrequency = midiToFrequency(note);
+        this.playTone({
+          frequency: leadFrequency,
+          endFrequency: leadFrequency * 1.004,
+          duration: pattern.stepSeconds * 0.62,
+          volume: Math.max(0.032, leadVolume - index * 0.012),
+          type: "square",
+          attack: 0.008,
+          when: when + index * 0.012,
+          filterFrequency: 2500,
+          destinationGain: this.bgmGain,
+        });
       });
       layers.push("lead");
     }
 
     if (Array.isArray(step.counter)) {
       step.counter.forEach((note, index) => {
-        this.playCounterSynth(note, when + pattern.stepSeconds * 0.44 + index * 0.01);
+        const counterFrequency = midiToFrequency(note);
+        this.playTone({
+          frequency: counterFrequency,
+          endFrequency: counterFrequency * 0.998,
+          duration: pattern.stepSeconds * 0.42,
+          volume: Math.max(0.02, counterVolume - index * 0.008),
+          type: "sine",
+          attack: 0.006,
+          when: when + pattern.stepSeconds * 0.34 + index * 0.01,
+          filterFrequency: 2600,
+          destinationGain: this.bgmGain,
+        });
       });
       layers.push("counter");
+    }
+
+    if (step.accent || step.noiseVolume) {
+      this.playNoise({
+        duration: 0.026,
+        volume: step.noiseVolume ?? 0.008,
+        frequency: step.noiseFrequency ?? 2200,
+        when,
+        destinationGain: this.bgmGain,
+      });
+      layers.push("noise");
     }
 
     this.lastBgmLayers = layers;
@@ -1335,6 +1476,7 @@ class SoundManager {
 
     if (targetMode === "silent") {
       this.bgmMode = "silent";
+      this.lastBgmLayers = [];
       return;
     }
 
@@ -1378,18 +1520,16 @@ class SoundManager {
         this.playTone({ frequency: 360, endFrequency: 382, duration: 0.15, volume: 0.05, type: "triangle", when: 0.15 });
         break;
       case "jump":
-        this.playTone({ frequency: 260, endFrequency: 420, duration: 0.08, volume: 0.04, type: "sine" });
+        this.playJumpSe();
         break;
       case "punch":
-        this.playTone({ frequency: 180, endFrequency: 120, duration: 0.05, volume: 0.05, type: "square", filterFrequency: 1600 });
+        this.playPunchSe();
         break;
       case "kick":
-        this.playTone({ frequency: 150, endFrequency: 90, duration: 0.085, volume: 0.055, type: "square", filterFrequency: 1200 });
-        this.playNoise({ duration: 0.05, volume: 0.014, frequency: 900, when: 0.01 });
+        this.playKickSe();
         break;
       case "fireball":
-        this.playTone({ frequency: 170, endFrequency: 640, duration: 0.18, volume: 0.05, type: "sawtooth", filterFrequency: 1800 });
-        this.playTone({ frequency: 460, endFrequency: 280, duration: 0.12, volume: 0.018, type: "sine", when: 0.04 });
+        this.playFireballSe();
         break;
       case "guard":
         this.playTone({ frequency: 260, endFrequency: 210, duration: 0.06, volume: 0.04, type: "triangle" });
