@@ -890,7 +890,7 @@ class SoundManager {
       this.bgmCompressor.attack.value = 0.003;
       this.bgmCompressor.release.value = 0.18;
       this.bgmGain = this.context.createGain();
-      this.bgmGain.gain.value = 1.08;
+      this.bgmGain.gain.value = 0.7;
       this.bgmGain.connect(this.bgmCompressor);
       this.bgmCompressor.connect(this.masterGain);
       this.masterGain.connect(this.context.destination);
@@ -1003,7 +1003,7 @@ class SoundManager {
     source.stop(stopTime + 0.01);
   }
 
-  playKick({ when = 0, volume = 0.12, destinationGain = this.bgmGain } = {}) {
+  playKick({ when = 0, volume = 0.085, destinationGain = this.bgmGain } = {}) {
     if (!this.context || !destinationGain) return;
 
     const startTime = this.context.currentTime + when;
@@ -1035,7 +1035,7 @@ class SoundManager {
     });
   }
 
-  playSnare({ when = 0, volume = 0.078, destinationGain = this.bgmGain } = {}) {
+  playSnare({ when = 0, volume = 0.056, destinationGain = this.bgmGain } = {}) {
     if (!this.context || !destinationGain) return;
 
     this.playNoise({
@@ -1052,7 +1052,7 @@ class SoundManager {
       frequency: 210,
       endFrequency: 138,
       duration: 0.08,
-      volume: 0.032,
+      volume: 0.024,
       type: "triangle",
       attack: 0.002,
       when,
@@ -1066,7 +1066,7 @@ class SoundManager {
 
     this.playNoise({
       duration: open ? 0.11 : 0.035,
-      volume: open ? 0.028 : 0.02,
+      volume: open ? 0.018 : 0.013,
       when,
       frequency: open ? 7600 : 9000,
       filterType: "highpass",
@@ -1080,7 +1080,7 @@ class SoundManager {
 
     this.playNoise({
       duration: 0.22,
-      volume: 0.03,
+      volume: 0.02,
       when,
       frequency: 6200,
       filterType: "highpass",
