@@ -883,7 +883,7 @@ class SoundManager {
       this.masterGain = this.context.createGain();
       this.masterGain.gain.value = 0.22;
       this.bgmGain = this.context.createGain();
-      this.bgmGain.gain.value = 0.82;
+      this.bgmGain.gain.value = 0.72;
       this.bgmGain.connect(this.masterGain);
       this.masterGain.connect(this.context.destination);
       this.noiseBuffer = this.createNoiseBuffer(this.context);
@@ -1000,7 +1000,7 @@ class SoundManager {
       frequency: 210,
       endFrequency: 460,
       duration: 0.11,
-      volume: 0.055,
+      volume: 0.07,
       type: "triangle",
       attack: 0.004,
       filterFrequency: 2600,
@@ -1009,14 +1009,14 @@ class SoundManager {
       frequency: 420,
       endFrequency: 690,
       duration: 0.07,
-      volume: 0.022,
+      volume: 0.03,
       type: "sine",
       when: 0.018,
       attack: 0.003,
     });
     this.playNoise({
       duration: 0.032,
-      volume: 0.012,
+      volume: 0.016,
       frequency: 1800,
       filterType: "highpass",
       q: 0.65,
@@ -1029,14 +1029,14 @@ class SoundManager {
       frequency: 210,
       endFrequency: 108,
       duration: 0.055,
-      volume: 0.062,
+      volume: 0.078,
       type: "square",
       attack: 0.002,
       filterFrequency: 1400,
     });
     this.playNoise({
       duration: 0.04,
-      volume: 0.016,
+      volume: 0.022,
       frequency: 980,
       filterType: "bandpass",
       q: 0.9,
@@ -1049,7 +1049,7 @@ class SoundManager {
       frequency: 168,
       endFrequency: 82,
       duration: 0.095,
-      volume: 0.072,
+      volume: 0.088,
       type: "sawtooth",
       attack: 0.002,
       filterFrequency: 1250,
@@ -1058,7 +1058,7 @@ class SoundManager {
       frequency: 112,
       endFrequency: 70,
       duration: 0.08,
-      volume: 0.026,
+      volume: 0.034,
       type: "triangle",
       when: 0.012,
       attack: 0.002,
@@ -1066,7 +1066,7 @@ class SoundManager {
     });
     this.playNoise({
       duration: 0.055,
-      volume: 0.018,
+      volume: 0.024,
       frequency: 860,
       filterType: "bandpass",
       q: 0.78,
@@ -1079,7 +1079,7 @@ class SoundManager {
       frequency: 132,
       endFrequency: 610,
       duration: 0.2,
-      volume: 0.06,
+      volume: 0.078,
       type: "sawtooth",
       attack: 0.005,
       filterFrequency: 2000,
@@ -1088,7 +1088,7 @@ class SoundManager {
       frequency: 372,
       endFrequency: 256,
       duration: 0.14,
-      volume: 0.026,
+      volume: 0.036,
       type: "triangle",
       when: 0.03,
       attack: 0.004,
@@ -1096,7 +1096,7 @@ class SoundManager {
     });
     this.playNoise({
       duration: 0.1,
-      volume: 0.018,
+      volume: 0.024,
       frequency: 1400,
       filterType: "bandpass",
       q: 0.7,
